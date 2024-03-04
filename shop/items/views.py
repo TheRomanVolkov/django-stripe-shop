@@ -1,6 +1,11 @@
+from django.conf import settings
+from django.shortcuts import render
 from django.views.generic import DetailView, ListView
 from .models import Item
-from django.conf import settings
+
+
+def home(request):
+    return render(request, 'items/home.html')
 
 
 class ItemDetailView(DetailView):
