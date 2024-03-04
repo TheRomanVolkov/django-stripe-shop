@@ -1,0 +1,50 @@
+version: '3.8'
+
+x-postgres-variables: &postgres-variables
+  POSTGRES_DB: "${POSTGRES_DB}"
+  POSTGRES_HOST: "${POSTGRES_HOST}"
+  POSTGRES_PORT: "${POSTGRES_PORT}"
+  POSTGRES_USER: "${POSTGRES_USER}"
+  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+  POSTGRES_HOST_AUTH_METHOD: "${POSTGRES_HOST_AUTH_METHOD}"
+
+x-django-variables: &django-variables
+  PYTHONUNBUFFERED: 1
+  DJANGO_PORT: "${DJANGO_PORT}"
+  DEBUG: "${DEBUG}"
+  STRIPE_PUBLIC_KEY: "${STRIPE_PUBLIC_KEY}"
+  STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY}"
+
+services:
+  django:
+    container_name: ${CONTAINERS_NAME}_django
+    build: .
+    command: >
+      sh -c "cd /code/shop &&
+             python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:${DJANGO_PORT}"
+    environment:
+      <<: [*django-variables, *postgres-variables]
+    ports:
+      - "${DJANGO_PORT}:${DJANGO_PORT}"
+    expose:
+      - "${DJANGO_PORT}"
+    volumes:
+      - ./static:/code/static/
+
+    restart: always
+    depends_on:
+      - db
+
+  db:
+    container_name: ${CONTAINERS_NAME}_db
+    image: postgres:16
+    restart: always
+    environment:
+      <<: *postgres-variables
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    expose:
+      - "${POSTGRES_PORT}"
+    command: -p ${POSTGRES_PORT}
